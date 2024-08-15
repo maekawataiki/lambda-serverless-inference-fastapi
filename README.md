@@ -1,4 +1,4 @@
-# Deploy an ML serverless inference endpoint using FastAPI, AWS Lambda and AWS CDK
+# Deploy serverless inference endpoint using FastAPI, AWS Lambda and AWS CDK
 
 ## Architecture
 ![Architecture](docs/assets/architecture.png)
@@ -47,31 +47,13 @@ fastapi_model_serving
 │   │   __init__.py
 │   │   fastapi_model_serving_stack.py
 │   │   
-│   └───model_endpoint  
-│       └───docker
-│       │      Dockerfile
-│       │      serving_api.tar.gz
-│       │  
-│       └───runtime
-│            └───serving_api
-│                    requirements.txt  
-│                    serving_api.py
-│                └───custom_lambda_utils
-│                     └───model_artifacts
-│                            ...
-│                     └───scripts
-│                            inference.py
-│  
-└───templates
-│   └───api
-│   │     api.py    
-│   └───dummy
-│         dummy.py
+│   └───model_endpoint/docker
+│       └───Dockerfile
+│           requirements.txt  
+│           serving_api.py
 |
 └───scripts
-│   └───init-lambda-code.sh
 │   └───setup.sh
-│   └───update_notice.sh
 │      
 │   app.py
 │   cdk.json
@@ -84,23 +66,10 @@ The directory follows the recommended structure of cdk projects for Python.
 
 The most important part of this repository is the ```fast_api_model_serving``` directory. It contains the code that will define the cdk stack and the resources that are going to be used for model serving.
 
-`model_endpoint` directory:
-- contains all the assets necessary that will make up our serverless endpoint, i.e., Dockerfile to build the Docker image that AWS Lamdba will use, as well as the lambda function code that uses FastAPI to handle inference requests and route them to the correct endpoint, and the model artifacts of the model that we want to deploy.
-
 Inside model endpoint, we have the follwing struture... 
 - `docker` directory:
     - which specifies a `Dockerfile` which is used to build the image for the Lambda function with all the artifacts (Lambda function code, model artifacts, ...) in the right place so that they can be used without issues.
-    - `Serving.api.tar.gz`: this is a tarball that contains all the assets from the runtime folder that are necessary for building the Docker image. More on how to create the tar.gz. file later in the next section.
-- `runtime` directory:
     - contains the code for the `serving_api` Lambda function and it’s dependencies specified in the `requirements.txt` file
-    - as well as the `custom_lambda_utils` directory which includes an `inference` script that loads the necessary `model artifacts` so that the model can be passed to the `serving_api` that will then expose it as an endpoint
-
-
-Besides, we have the `template` directory which provides you with a template of folder structure and files where you can define your customised codes and APIs following the sample we went through above.
-
-- `template` directory: contains dummy code that can be used to create new lambda functions from 
-    - `dummy` contains the code that implements the structure of an ordinary AWS Lambda function using the Python runtime
-    - `api` contains the code that lambda that implements an AWS Lambda function that wraps a FastAPI endpoint around an existing API Gateway
 
 
 ## Step-by-step walk-through: Deploying the solution
@@ -120,26 +89,19 @@ make prep
 This command can take around **5 minutes** (depending on your internet bandwidth) because it needs to download the model artifacts.
 
 
-3) The model artifacts need to be packaged inside a .tar.gz archive that will be used inside the docker image that is built in the cdk stack. You will need to run this code whenever you make changes to the model artifacts or the API itself to always have the most up-to-date version of your serving endpoint packaged:
-```shell
-make package_model
-```
-Finally, the artifacts are all in-place. Now we can move over to deploying the cdk stack to your AWS account.
-
-
-4) ```FIRST TIME CDK USERS ONLY```: If this is your first time deploying an AWS CDK app into an environment (account + region combination), you will need to bootstrap the environment, i.e., prepare it for use with `CDK`. This will create a stack that includes resources that are needed for the toolkit’s operation. For example, the stack includes an S3 bucket that is used to store templates and assets during the deployment process.
+3) ```FIRST TIME CDK USERS ONLY```: If this is your first time deploying an AWS CDK app into an environment (account + region combination), you will need to bootstrap the environment, i.e., prepare it for use with `CDK`. This will create a stack that includes resources that are needed for the toolkit’s operation. For example, the stack includes an S3 bucket that is used to store templates and assets during the deployment process.
 ```shell
 make cdk_bootstrap
 ```
 
-5) Since we are building docker images locally in this cdk deployment, we need to ensure that the docker daemon is running before we are going to be able to deploy this stack via the cdk CLI. To check whether or not the docker daemon is running on your system, use the following command:
+4) Since we are building docker images locally in this cdk deployment, we need to ensure that the docker daemon is running before we are going to be able to deploy this stack via the cdk CLI. To check whether or not the docker daemon is running on your system, use the following command:
 ```shell
 docker ps
 ```
 If you don’t get an error message, you should be good to deploy the solution. 
 
 
-6) Deploy the solution with the following command:
+5) Deploy the solution with the following command:
 ```shell
 make deploy
 ```
@@ -176,7 +138,7 @@ import requests
 headers = {}
 payload = {}
 
-url = "https://<YOUR_API_GATEWAY_ENDPOINT_ID>.execute-api.<YOUR_ENDPOINT_REGION>.amazonaws.com/prod/question?question=\"What is the color of my car now?\"&context=\"My car used to be blue but I painted red\""
+url = "https://<YOUR_API_GATEWAY_ENDPOINT_ID>.execute-api.<YOUR_ENDPOINT_REGION>.amazonaws.com/prod/"
 
 response = requests.request("GET", url, headers=headers, data=payload)
 
@@ -185,7 +147,7 @@ print(response.text)
 
 This code snippet would output a string similar to the following:
 ```python
-'{"score":0.6947233080863953,"start":38,"end":41,"answer":"red"}'
+'{"message":"Hello World"}'
 ```
 
 ### Clean up

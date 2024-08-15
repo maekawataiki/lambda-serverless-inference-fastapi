@@ -6,13 +6,20 @@ from mangum import Mangum
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-app = FastAPI()
+app = FastAPI(root_path="/prod")
 
 
 @app.get("/")
-async def root():
-    return {"message": "Hello World"}
+async def root() -> dict:
+    """
+    **Dummy endpoint that returns 'hello world' example.**
 
+    ```
+    Returns:
+        dict: 'hello world' message.
+    ```
+    """
+    return {"message": "Hello World"}
 
 def lambda_handler(event, context):
     logger.info(json.dumps(event))

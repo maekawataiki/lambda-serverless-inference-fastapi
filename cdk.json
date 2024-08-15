@@ -31,6 +31,6 @@
       "aws",
       "aws-cn"
     ],
-    "DEPLOYMENT_REGION": "eu-west-1"
+    "DEPLOYMENT_REGION": "us-west-2"
   }
 }
